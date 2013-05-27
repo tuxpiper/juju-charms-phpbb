@@ -1,0 +1,27 @@
+#!/bin/bash
+
+set -uex
+
+source inc/common
+
+juju-log "config-changed hook fired"
+unit_address=`unit-get private-address`
+
+service apache2 stop
+
+rm -f /var/www/index.html
+rm -f /etc/apache2/sites-enabled/*
+
+a2enmod php5
+
+juju-log "Install Apache phpbb config..."
+install -o root -g root -m 0644 files/charm/apache/phpbb-site.conf /etc/apache2/sites-available/phpbb-site
+sed -i -e "s/^  ServerName .*/  ServerName ${unit_address}/" /etc/apache2/sites-available/phpbb-site
+a2ensite phpbb-site
+
+service apache2 start
+
+
+
+
+

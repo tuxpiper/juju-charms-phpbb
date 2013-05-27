@@ -1,0 +1,9 @@
+#!/bin/bash
+
+#
+juju-log "Install hook fired"
+juju-log "Installing necessary packages"
+add-apt-repository -y ppa:charmers/charm-helpers
+apt-get -y install libapache2-mod-php5 php5-mysql php5-gd imagemagick charm-helper-sh
+
+

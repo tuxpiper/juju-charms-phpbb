@@ -1,0 +1,58 @@
+options:
+    admin-name:
+        default: admin
+        type: string
+        description: TODO
+    admin-password:
+        default: changeme
+        type: string
+        description: TODO
+    admin-email:
+        default: admin@email.box
+        type: string
+        description: TODO
+    smtp-delivery:
+        default: False
+        type: boolean
+        description: TODO 
+    smtp-server:
+        default: localhost
+        type: string
+        description: TODO
+    smtp-auth:
+        default: PLAIN
+        type: string
+        description: TODO
+    smtp-user:
+        default: ""
+        type: string
+        description: TODO
+    smtp-pass:
+        default: ""
+        type: string
+        description: TODO
+    cookie-secure:
+        default: False
+        type: boolean
+        description: TODO
+    force-url:
+        default: False
+        type: boolean
+        description: TODO
+    server-procotol:
+        default: http://
+        type: string
+        description: TODO
+    domain-name:
+        default: ""    
+        type: string
+        description: TODO
+    server-port:
+        default: 80
+        type: int
+        description: TODO
+    script-path:
+        default: /
+        type: string
+        description: TODO
+    

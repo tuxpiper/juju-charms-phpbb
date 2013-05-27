@@ -1,0 +1,6 @@
+#!/bin/bash
+
+hostname=`unit-get public-address`
+
+phpbb_install_path="/var/www"
+

@@ -1,0 +1,82 @@
+#!/bin/bash
+
+set -eux
+
+juju-log "db-relation-changed hook fired"
+
+parse_bool2int() {
+    ( [ $1 == "True" ] || [ $1 == "true" ] || [ $1 == "1" ] ) && echo 1 || echo 0
+}
+
+db_database=`relation-get database`
+db_user=`relation-get user`
+db_password=`relation-get password`
+db_host=`relation-get private-address`
+unit_address=`unit-get private-address`
+
+admin_name=`config-get admin-name`
+admin_pass=`config-get admin-password`
+board_email=`config-get admin-email`
+img_imagick=$(dirname $(which composite))
+email_enable=1
+smtp_delivery=$(parse_bool2int `config-get smtp-delivery`)
+smtp_host=`config-get smtp-server`
+smtp_auth=`config-get smtp-auth`
+smtp_user=`config-get smtp-user`
+smtp_pass=`config-get smtp-pass`
+cookie_secure=$(parse_bool2int `config-get cookie-secure`)
+force_server_vars=`config-get force-url`
+server_protocol=`config-get server-procotol`
+server_name=`config-get domain-name`
+server_name=${server_name:-$unit_address}
+server_port=`config-get server-port`
+script_path=`config-get script-path`
+
+if [ -z "$db_database" ]; then exit 0; fi
+
+source "/usr/share/charm-helper/sh/net.sh"
+payload=`ch_get_file "https://www.phpbb.com/files/release/phpBB-3.0.11.tar.bz2"`
+if [ ! -f "$payload" ] || [ -z "$payload" ]; then
+  juju-log "Failed to retrieve phpBB"
+else
+  juju-log "Downloaded phpBB into file $payload"
+fi
+
+tmp_dest=$(mktemp -d)
+tar -xj -f ${payload} -C $tmp_dest && mv $tmp_dest/phpBB3/* /var/www
+
+# Create database configuration
+touch /var/www/config.php
+chown www-data:www-data /var/www/config.php
+
+# Finish installation by sending requests to the install procedure
+do_config_request() {
+    sub=$1
+    curl -X POST \
+	    -d "default_lang=en" -d "admin_name=$admin_name" \
+	    -d "admin_pass1=$admin_pass" -d "admin_pass2=$admin_pass" \
+	    -d "board_email1=$board_email" -d "board_email2=$board_email" \
+    	-d "img_imagick=$img_imagick" -d "language=en" \
+    	-d "dbms=mysqli" -d "dbhost=$db_host" \
+	    -d "dbport=" -d "dbname=$db_database" -d "dbuser=$db_user" \
+	    -d "dbpasswd=$db_password" -d "table_prefix=phpbb_" \
+	    -d "ftp_path=" -d "ftp_user=" -d "ftp_pass=" \
+	    -d "email_enable=1" -d "smtp_delivery=$smtp_delivery" \
+	    -d "smtp_host=$smtp_host" -d "smtp_auth=$smtp_auth" \
+	    -d "smtp_user=$smtp_user" -d "smtp_pass=$smtp_pass" \
+	    -d "cookie_secure=$cookie_secure" \
+	    -d "force_server_vars=$force_server_vars" \
+	    -d "server_protocol=$server_protocol" \
+	    -d "server_name=$server_name" -d "server_port=$server_port" \
+	    -d "script_path=$script_path" \
+	    "http://${unit_address}/install/index.php?mode=install&sub=$sub"
+}
+
+juju-log "Sending 'config_file' post-install request"
+do_config_request config_file
+juju-log "Sending 'create_table' post-install request"
+do_config_request create_table
+juju-log "Sending 'final' post-install request"
+do_config_request final
+
+
